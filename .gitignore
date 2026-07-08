@@ -1,0 +1,27 @@
+# 构建产物
+/diskcli
+/dist/
+/bin/
+
+# 测试覆盖率
+*.out
+coverage.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 本地配置（cookie 含敏感信息）
+.qkconfig
+.diskconfig
+.env
+
+# 上传断点续传状态
+.qkcli/
+.diskcli/

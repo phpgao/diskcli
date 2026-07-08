@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>diskcli · 多网盘命令行工具</title>
+  <meta name="description" content="diskcli 是一个用 Go 编写的多网盘命令行工具,目前支持夸克网盘的文件管理、分享、转存与并发分片上传。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-background: #0F172A;
+      --color-foreground: #F8FAFC;
+      --color-primary: #1E293B;
+      --color-secondary: #334155;
+      --color-accent: #22C55E;
+      --color-accent-hover: #16A34A;
+      --color-muted: #94A3B8;
+      --color-border: #475569;
+      --color-surface: #111c33;
+      --radius: 12px;
+      --maxw: 760px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition: none !important; animation: none !important; }
+    }
+    body {
+      background: var(--color-background);
+      color: var(--color-foreground);
+      font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    a { color: inherit; }
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+    .wrap {
+      width: 100%;
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    /* ---------- Hero ---------- */
+    header.hero {
+      width: 100%;
+      padding: 96px 0 56px;
+      text-align: center;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      color: var(--color-muted);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 28px;
+    }
+    .logo .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-accent);
+      box-shadow: 0 0 10px var(--color-accent);
+    }
+    h1 {
+      font-family: "JetBrains Mono", monospace;
+      font-size: clamp(40px, 9vw, 64px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1.05;
+    }
+    h1 .accent { color: var(--color-accent); }
+    .subtitle {
+      margin: 18px auto 0;
+      max-width: 540px;
+      font-size: clamp(16px, 2.4vw, 19px);
+      color: var(--color-muted);
+    }
+    .cta-row {
+      margin-top: 36px;
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 13px 24px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+    }
+    .btn-primary {
+      background: var(--color-accent);
+      color: #052e16;
+    }
+    .btn-primary:hover { background: var(--color-accent-hover); transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-foreground);
+      border: 1px solid var(--color-border);
+    }
+    .btn-ghost:hover { border-color: var(--color-foreground); transform: translateY(-1px); }
+    /* ---------- Sections ---------- */
+    section { width: 100%; padding: 48px 0; border-top: 1px solid rgba(71,85,105,0.4); }
+    section h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    section h2 svg { width: 20px; height: 20px; color: var(--color-accent); flex: none; }
+    .features { display: grid; gap: 14px; }
+    .feature {
+      background: var(--color-surface);
+      border: 1px solid rgba(71,85,105,0.45);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .feature h3 {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .feature p { color: var(--color-muted); font-size: 15px; }
+    pre {
+      background: #0b1222;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      overflow-x: auto;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #E2E8F0;
+    }
+    pre .c { color: var(--color-muted); }
+    pre .g { color: var(--color-accent); }
+    code.inline {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.92em;
+      background: var(--color-primary);
+      padding: 2px 7px;
+      border-radius: 6px;
+      color: #E2E8F0;
+    }
+    .steps { display: grid; gap: 22px; }
+    .step .label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      color: var(--color-accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .step p { color: var(--color-muted); margin-bottom: 10px; }
+    footer {
+      width: 100%;
+      border-top: 1px solid rgba(71,85,105,0.4);
+      padding: 32px 0 56px;
+      text-align: center;
+      color: var(--color-muted);
+      font-size: 14px;
+    }
+    footer a { color: var(--color-accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <span class="logo"><span class="dot"></span>diskcli</span>
+      <h1>多网盘<span class="accent">命令行</span>工具</h1>
+      <p class="subtitle">
+        用 Go 编写,夸克网盘首发。文件管理、分享、转存与并发分片上传,一条命令搞定。
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#install">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          快速安装
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/phpgao/diskcli" rel="noopener">在 GitHub 查看</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        核心能力
+      </h2>
+      <div class="features">
+        <div class="feature">
+          <h3>文件管理</h3>
+          <p>浏览、复制、移动、重命名、删除与搜索,<code class="inline">ls</code> / <code class="inline">cp</code> / <code class="inline">mv</code> / <code class="inline">rm</code> 一应俱全。</p>
+        </div>
+        <div class="feature">
+          <h3>分享与转存</h3>
+          <p>创建分享链接、分页列出我的分享、取消分享,以及把别人的分享一键转存到本地目录。</p>
+        </div>
+        <div class="feature">
+          <h3>并发分片上传</h3>
+          <p>大文件自动分片、多线程上传,基于 backoff/v5 的指数退避重试,网络抖动也能续传。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        安装
+      </h2>
+      <div class="steps">
+        <div class="step">
+          <div class="label">方式一 · go install</div>
+          <p>需要本地已安装 Go 1.22+。</p>
+          <pre><span class="c"># 安装最新版到 $GOPATH/bin</span>
+<span class="g">go install</span> github.com/phpgao/diskcli@latest</pre>
+        </div>
+        <div class="step">
+          <div class="label">方式二 · 从源码构建</div>
+          <p>克隆仓库后本地编译。</p>
+          <pre><span class="c"># 构建并放到 ./dist</span>
+<span class="g">git clone</span> https://github.com/phpgao/diskcli
+<span class="g">cd</span> diskcli &amp;&amp; go build ./cmd/diskcli</pre>
+        </div>
+        <div class="step">
+          <div class="label">配置</div>
+          <p>在 <code class="inline">~/.diskcli/config</code> 写入 <code class="inline">qk_cookie</code>,或用环境变量 <code class="inline">QK_COOKIE</code> 覆盖;多账号用 <code class="inline">[account.&lt;name&gt;]</code> 段 + <code class="inline">DISK_ACCOUNT</code> 切换。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="usage">
+    <div class="wrap">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>
+        快速上手
+      </h2>
+      <div class="steps">
+        <div class="step">
+          <div class="label">列出我的分享(分页)</div>
+          <pre><span class="c"># 默认第 1 页,需要更多自己传 --page</span>
+diskcli share list --page 1 --page-size 20</pre>
+        </div>
+        <div class="step">
+          <div class="label">转存别人的分享</div>
+          <pre><span class="c"># 把分享链接保存到网盘 /dest 目录</span>
+diskcli share save https://pan.quark.cn/s/xxxx /dest</pre>
+        </div>
+        <div class="step">
+          <div class="label">多账号切换</div>
+          <pre><span class="c"># DISK_ACCOUNT 选择 [account.svip] 段</span>
+<span class="g">DISK_ACCOUNT</span>=svip diskcli share list</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>diskcli · 用 Go 构建 · <a href="https://github.com/phpgao/diskcli" rel="noopener">GitHub</a></p>
+    </div>
+  </footer>
+</body>
+</html>
