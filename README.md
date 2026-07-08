@@ -112,6 +112,12 @@ diskcli ls / -o yaml             # YAML
 ### Directory management
 
 ```bash
+diskcli tree                          # print the directory tree from root
+diskcli tree /backup                  # from a given path
+diskcli tree /backup -L 2             # max depth
+diskcli tree /backup -d               # directories only
+diskcli tree /backup -h               # show file sizes
+diskcli tree /backup -C 10            # traverse 10 directories in parallel (default 5)
 diskcli mkdir /backup/photos
 diskcli mv /file.txt /backup/           # move into existing dir
 diskcli mv /file.txt /backup/new.txt    # rename via move (same dir)

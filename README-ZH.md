@@ -102,6 +102,12 @@ diskcli ls / -o yaml             # YAML 输出
 ### 目录管理
 
 ```bash
+diskcli tree                          # 从根目录打印目录树
+diskcli tree /backup                  # 从指定路径
+diskcli tree /backup -L 2             # 限制最大深度
+diskcli tree /backup -d               # 仅目录
+diskcli tree /backup -h               # 显示文件大小
+diskcli tree /backup -C 10            # 并发遍历 10 个目录（默认 5）
 diskcli mkdir /backup/photos
 diskcli mv /file.txt /backup/           # 移到已存在的目录
 diskcli mv /file.txt /backup/new.txt    # 同目录改名（mv 语义）

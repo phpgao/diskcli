@@ -150,6 +150,7 @@ baidu/aliyun/onedrive are planned.
 	// Register subcommands.
 	root.AddCommand(newInfoCmd())
 	root.AddCommand(newLsCmd())
+	root.AddCommand(newTreeCmd())
 	root.AddCommand(newSearchCmd())
 	root.AddCommand(newMkdirCmd())
 	root.AddCommand(newMvCmd())

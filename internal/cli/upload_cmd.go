@@ -109,6 +109,10 @@ func uploadFolder(ctx context.Context, prov provider.Provider, local, remote str
 		st.logger.Info("uploading folder", "local", local, "remote", remote)
 	}
 	count := 0
+	// created caches remote directories confirmed to exist during this folder
+	// upload, so each one is mkdir'd at most once and we don't re-warn on the
+	// "already exists" conflicts the server returns for pre-existing dirs.
+	created := make(map[string]bool)
 	err := filepath.Walk(local, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -119,15 +123,12 @@ func uploadFolder(ctx context.Context, prov provider.Provider, local, remote str
 		rel, _ := filepath.Rel(local, path)
 		rel = filepath.ToSlash(rel)
 		dstPath := strings.TrimSuffix(remote, "/") + "/" + rel
-		// ensure parent directories exist remotely (ignore "already exists" errors)
-		if err := ensureRemoteDir(ctx, prov, filepath.Dir(dstPath)); err != nil {
-			if st != nil {
-				st.logger.Warn("create remote dir failed (may already exist)", "dir", filepath.Dir(dstPath), "err", err)
-			}
-		}
+		// ensure parent directories exist remotely; skip ones already created
+		// or already present (the server reports 同名冲突 for those).
+		ensureRemoteDir(ctx, prov, filepath.Dir(dstPath), created)
 		src := provider.UploadSource{Path: path, Size: info.Size(), ModTime: info.ModTime()}
 		if st != nil {
-			st.logger.Debug("uploading file", "path", path, "dst", dstPath)
+			st.logger.Info("uploading file", "index", count+1, "path", path, "dst", dstPath, "size", formatBytes(info.Size()))
 		}
 		if _, err := prov.Upload(ctx, dstPath, src, opts); err != nil {
 			return fmt.Errorf("upload %s failed: %w", path, err)
@@ -143,10 +144,18 @@ func uploadFolder(ctx context.Context, prov provider.Provider, local, remote str
 	return nil
 }
 
-// ensureRemoteDir ensures remote directories exist (creates each segment; ignores "already exists").
-func ensureRemoteDir(ctx context.Context, prov provider.Provider, dir string) error {
+// ensureRemoteDir ensures remote directories exist, creating each segment of
+// the path that is not yet known to exist.
+//
+// created caches directory paths confirmed during this upload: a path already
+// in the map is skipped without any network call. When Mkdir reports that the
+// directory already exists (e.g. Quark's 同名冲突 for a pre-existing folder),
+// the path is recorded and the warning is suppressed. A real error is still
+// warned. The 800ms settle delay runs only after a directory is actually
+// created, so a large folder no longer pays it once per file.
+func ensureRemoteDir(ctx context.Context, prov provider.Provider, dir string, created map[string]bool) {
 	if dir == "" || dir == "/" || dir == "." {
-		return nil
+		return
 	}
 	parts := strings.Split(strings.Trim(dir, "/"), "/")
 	current := ""
@@ -155,14 +164,33 @@ func ensureRemoteDir(ctx context.Context, prov provider.Provider, dir string) er
 			continue
 		}
 		current = current + "/" + p
-		if err := prov.Mkdir(ctx, current); err != nil {
-			// "already exists" errors are expected; warn on stderr.
-			fmt.Fprintf(os.Stderr, "warn: mkdir %s: %v\n", current, err)
+		if created[current] {
+			continue
 		}
-		// Brief delay so the cloud listing can observe the new directory.
+		if err := prov.Mkdir(ctx, current); err != nil {
+			if isAlreadyExists(err) {
+				created[current] = true
+				continue
+			}
+			fmt.Fprintf(os.Stderr, "warn: mkdir %s: %v\n", current, err)
+			continue
+		}
+		created[current] = true
+		// Brief delay so the cloud listing can observe the new directory
+		// before nested files are uploaded into it.
 		time.Sleep(800 * time.Millisecond)
 	}
-	return nil
+}
+
+// isAlreadyExists reports whether err indicates the target directory already
+// exists. Quark returns HTTP 400 with 同名冲突 for a pre-existing folder; we
+// also recognize common "exist" phrases for safety across providers.
+func isAlreadyExists(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(err.Error(), "同名冲突") || strings.Contains(msg, "already exist") || strings.Contains(msg, "exists")
 }
 
 // parseConflictStrategy parses the on-conflict flag value.
