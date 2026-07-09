@@ -87,3 +87,13 @@ func TestRenderTreeHumanReadable(t *testing.T) {
 		t.Errorf("-h should append a human-readable size, got:\n%s", buf.String())
 	}
 }
+
+// TestTreeHelpShorthand guards against a regression where -h (mapped to
+// --human-readable, matching Unix tree) clashed with cobra's default --help
+// -h shorthand and panicked at command init.
+func TestTreeHelpShorthand(t *testing.T) {
+	cmd := newTreeCmd()
+	if err := cmd.ParseFlags([]string{"-h"}); err != nil {
+		t.Fatalf("ParseFlags -h should not error: %v", err)
+	}
+}

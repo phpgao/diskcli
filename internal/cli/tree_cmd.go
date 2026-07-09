@@ -68,6 +68,9 @@ Examples:
 	cmd.Flags().BoolVarP(&opts.dirsOnly, "dirs-only", "d", false, "list directories only")
 	cmd.Flags().BoolVarP(&opts.humanReadable, "human-readable", "h", false, "print file sizes in human-readable form")
 	cmd.Flags().IntVarP(&opts.concurrency, "concurrency", "C", 5, "directory traversal concurrency")
+	// Reserve --help without the -h shorthand so -h can mean --human-readable,
+	// matching the Unix tree command (help is still available via --help).
+	cmd.Flags().Bool("help", false, "help for tree")
 	return cmd
 }
 
