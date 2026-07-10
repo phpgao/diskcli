@@ -38,6 +38,14 @@ import (
 // Default config file location: $HOME/.diskcli/config
 const defaultConfigName = ".diskcli/config"
 
+const defaultConfigContent = `# diskcli configuration
+# 
+# Fill in your Quark cookie below:
+qk_cookie = ""
+# Number of concurrent upload threads:
+upload_threads = 4
+`
+
 // DiskCLIDir returns the ~/.diskcli directory, creating it if needed.
 func DiskCLIDir() (string, error) {
 	home, err := os.UserHomeDir()
@@ -213,6 +221,12 @@ func parseTOML(path string) (*AccountMap, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			// Try to create a default config file.
+			// Silently ignore any errors — best effort only.
+			if dir := filepath.Dir(path); dir != "" {
+				_ = os.MkdirAll(dir, 0o700)
+			}
+			_ = os.WriteFile(path, []byte(defaultConfigContent), 0o600)
 			return &AccountMap{
 				Default:  &Config{AccountName: "default", ConfigPath: path},
 				Accounts: make(map[string]*Config),
