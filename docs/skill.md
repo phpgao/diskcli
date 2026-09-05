@@ -6,6 +6,8 @@ description: CLI for operating cloud drives (currently Quark pan only) — list,
 version: 1.0.0
 ---
 
+> 中文版见 [skill-zh.md](skill-zh.md)。
+
 ## Overview
 
 `diskcli` is a multi-cloud-disk command-line tool written in Go. Only the
