@@ -25,7 +25,7 @@
 ## 安装
 
 ```bash
-go install github.com/jimmy/diskcli/cmd/diskcli@latest
+go install github.com/phpgao/diskcli/cmd/diskcli@latest
 ```
 
 从源码构建：

@@ -33,7 +33,7 @@ planned via the provider interface.
 ## Install
 
 ```bash
-go install github.com/jimmy/diskcli/cmd/diskcli@latest
+go install github.com/phpgao/diskcli/cmd/diskcli@latest
 ```
 
 Build from source:
